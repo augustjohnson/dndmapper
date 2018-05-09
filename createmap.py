@@ -17,6 +17,9 @@ house.generate() #generating the path of the wall.
 coordinates = house.wallPolygonCoordinates
 coordinates+=house.reflect() #adding the reflected image of the points onto the wall.
 
+print(house.normal(house.startingPoint,house.zeroPoint))
+
+print(house.startingPoint and house.zeroPoint)
 
 map = mapBuilder.mapBuilder(MULTIPLIER,CANVAS_SIZE)
 map.drawPolygon(coordinates)
