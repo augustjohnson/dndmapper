@@ -3,10 +3,9 @@ from shapely.geometry import *
 
 class structureBuilder(object):
     wallPath=[]
-    wallPolygonCoordinates=[]
 
     innerBounds = Polygon([(3,3),(3,-3),(-3,-3),(-3,3)])
-    outerBounds = Polygon([(13,13),(13,-13),(-13,-13),(-13,13)])
+    outerBounds = Polygon([(10,10),(10,-10),(-10,-10),(-10,10)])
 
     zeroPoint = (0,6)
     startingPoint = (0,4)
@@ -16,81 +15,59 @@ class structureBuilder(object):
         b=p1[1]-p2[1]
         return (-b,a)
 
-    def getNextPoint(self,p,normal,wasCollision):
-        distance=random.randint(1,6)
-        if wasCollision or random.random()<self.turnOdds:
+    def rollDistance(self):
+        return random.randint(2,8)
+        #return 5
+
+    def wallSection(self,startingPoint,direction,distance,wasCollision):
+        x=0
+        y=0
+        if wasCollision:
+            flow = self.normal(startingPoint,(0,0))
+            if(random.random()>0.5):
+                direction = (flow[0],0)
+            else:
+                direction = (0,flow[1])
+        
+        if random.random()<self.turnOdds:
             #follow the normal vector.
-            x=distance*abs(normal[0])/normal[0]
-            y=distance*abs(normal[1])/normal[1]
+            if direction[0]!=0: x=distance*abs(direction[0])/direction[0]
+            if direction[1]!=0: y=distance*abs(direction[1])/direction[1]
         else:
             #invert the normal vector.
-            x=-distance*abs(normal[0])/normal[0]
-            y=-distance*abs(normal[1])/normal[1]
-        return (x,y)
+            if direction[0]!=0: x=-distance*abs(direction[0])/direction[0]
+            if direction[1]!=0: y=-distance*abs(direction[1])/direction[1]
+        return (x + startingPoint[0],y + startingPoint[1]) #returns ending point
 
     def isInBounds(self,p):
         point = Point(p)
         return point.within(self.outerBounds) and not point.within(self.innerBounds)
 
-    def shortenByOne(self,p1,p2):
-        #return p1 adjusted one unit towards p2
-
     def __init__(self,seed,isSymmetric,turnOdds):
         self.turnOdds= 0.9 #Range from 0 to 1 affecting how often the algorithm will generate right turns.  Maybe change to range of -1 to 1 range?
         random.seed(seed)
         self.isSymmetric=isSymmetric
-        initialDirection = {'axis':'x','sign':True}
-        initialPosition = {'x':0,'y':0}
-        self.vector = {'d':initialDirection,'p':initialPosition}
-
-    def whichWay(self, previousDirection):
-        if previousDirection['axis']=='x':
-            sign = (random.random()<self.turnOdds) ^ previousDirection['sign']
-            return {'axis':'y','sign':sign}
-        if previousDirection['axis']=='y':
-            sign = not ((random.random()<self.turnOdds) ^ previousDirection['sign'])
-            return {'axis':'x','sign':sign}
-        else: print("OH SHIT")
-
-    def howFar(self, position):
-        rangeMax = 15 - max(abs(position['x']),abs(position['y']),5)
-        #return random.randint(3,max(rangeMax,4))
-        return 5
-
-    def getNextVector(self, previousVector):
-        newVector = previousVector
-        newVector['d']=self.whichWay(previousVector['d'])
-        distance = self.howFar(previousVector['p'])
-        #add a line about innersanctum
-        #You must pass in chance = 1 in that case.
-
-        if (newVector['d']['sign']==True):
-            newVector['p'][newVector['d']['axis']] += distance
-        else:
-            newVector['p'][newVector['d']['axis']] -= distance
-        return newVector
-
-    #def buildWallSection(self, startPoint, direction):
-        #given the start point and direction
-        #add a random integer
-        #check to see if that integer collides
-        #if it collides, use the collision to determine the next start point and direction
-        #save the vector
-        #if it doesn't collide, randomly determine the next start point and direction
-        #save the vector
-        
 
     def generate(self):
-        p1=self.startingPoint
-        self.wallPolygonCoordinates.append(p1)
-        p = self.getNextPoint(self.zeroPoint,p1,False)
-        collision=False
-        while not p.isInBounds:
-            collision=True
-            p=p.shortenByOne()
-        
-        self.wallPolygonCoordinates.append(p2)
+        pLast = self.zeroPoint
+        pCurr = self.startingPoint
+        self.wallPath.append(pCurr)
+        wasCollision = False
+        for num in range(4):
+            distance = self.rollDistance()
+            pNew = self.wallSection(pCurr,self.normal(pCurr,pLast),distance,wasCollision)
+            print("pcurr: {0}, pLast: {1}, pNew: {2} ".format(pCurr,pLast,pNew))
+            wasCollision = False # reset to False for the next one.
+            overShoot = 0
+            while(self.isInBounds(pNew)==False):
+                pNew = self.wallSection(pCurr,self.normal(pCurr,pLast),distance-overShoot,wasCollision)
+                overShoot+=1
+                wasCollision = True
+            pLast = pCurr
+            pCurr = pNew
+            self.wallPath.append(pCurr)
 
+            
 
     def setInnerBounds(self):
         print("Setting inner bounds.")
@@ -100,7 +77,7 @@ class structureBuilder(object):
 
     def reflect(self):
         #only mirrors the x point right now.
-        reversedPath = self.wallPolygonCoordinates[::-1]
+        reversedPath = self.wallPath[::-1]
         invertedPath = []
         for point in reversedPath:
             invertedPath.append((-point[0],point[1]))
