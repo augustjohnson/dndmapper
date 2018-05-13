@@ -4,8 +4,10 @@ from shapely.geometry import *
 class structureBuilder(object):
     wallPath=[]
 
-    zeroPoint = (0,6)
-    startingPoint = (0,5)
+ #   zeroPoint = (0,6)
+ #   startingPoint = (0,5)
+ #   y = 
+ #   startingPoint = (0,)
 
     def normal(self,p1,p2):
         a=p1[0]-p2[0]
@@ -30,12 +32,12 @@ class structureBuilder(object):
         
         if random.random()<self.turnOdds:
             #print("follow the normal vector. Turnodds:{0}".format(self.turnOdds))
-            if direction[0]!=0: x=distance*abs(direction[0])/direction[0]
-            if direction[1]!=0: y=distance*abs(direction[1])/direction[1]
+            if direction[0]!=0: x=distance*abs(direction[0])//direction[0]
+            if direction[1]!=0: y=distance*abs(direction[1])//direction[1]
         else:
             #print("#invert the normal vector.")
-            if direction[0]!=0: x=-distance*abs(direction[0])/direction[0]
-            if direction[1]!=0: y=-distance*abs(direction[1])/direction[1]
+            if direction[0]!=0: x=-distance*abs(direction[0])//direction[0]
+            if direction[1]!=0: y=-distance*abs(direction[1])//direction[1]
         return (x + start[0],y + start[1]) #returns ending point
 
     def isInBounds(self,p):
@@ -45,22 +47,29 @@ class structureBuilder(object):
     def __init__(self,seed,isSymmetric,turnOdds,innerBoundsR,outerBoundsR):
         self.turnOdds= turnOdds #Range from 0 to 1 affecting how often the algorithm will generate right turns.  Maybe change to range of -1 to 1 range?
         random.seed(seed)
+        self.innerBoundsR = innerBoundsR
+        self.outerBoundsR = outerBoundsR
+
         self.isSymmetric=isSymmetric
-        self.innerBounds = Polygon([(innerBoundsR,innerBoundsR),
-            (innerBoundsR,-innerBoundsR),
-            (-innerBoundsR,-innerBoundsR),
-            (-innerBoundsR,innerBoundsR)])
-        self.outerBounds = Polygon([(outerBoundsR,outerBoundsR),
-            (outerBoundsR,-outerBoundsR),
-            (-outerBoundsR,-outerBoundsR),
-            (-outerBoundsR,outerBoundsR)])
+        self.innerBounds = Polygon([(innerBoundsR,innerBoundsR//2),
+            (innerBoundsR,-innerBoundsR//2),
+            (-innerBoundsR,-innerBoundsR//2),
+            (-innerBoundsR,innerBoundsR//2)])
+        self.outerBounds = Polygon([(outerBoundsR,outerBoundsR//2),
+            (outerBoundsR,-outerBoundsR//2),
+            (-outerBoundsR,-outerBoundsR//2),
+            (-outerBoundsR,outerBoundsR//2)])
+
+        openSpace = (innerBoundsR + outerBoundsR)//4
+        self.startingPoint =(0,openSpace)
+        self.zeroPoint = (0,openSpace+1)
 
     def generate(self):
         pLast = self.zeroPoint
         pCurr = self.startingPoint
         self.wallPath.append(pCurr)
         wasCollision = False
-        for num in range(7):
+        for num in range(self.outerBoundsR):
             distance = self.rollDistance()
             pNew = self.wallSection(pCurr,self.normal(pCurr,pLast),distance,wasCollision)
             wasCollision = False # reset to False for the next one.
@@ -74,7 +83,9 @@ class structureBuilder(object):
             pCurr = pNew
             self.wallPath.append(pCurr)
 
-            
+    def largerThanMin(self):
+        poly = Polygon(self.wallPath)
+        return poly.area >= self.innerBounds.area
 
     def setInnerBounds(self):
         print("Setting inner bounds.")
