@@ -1,14 +1,16 @@
 from PIL import Image
 from PIL import ImageDraw
+from shapely.geometry import *
+from shapely.ops import transform
 
 class mapBuilder(object):
     def __init__(self,multiplier,canvasSize):
         self.back = Image.new('RGBA', (canvasSize,canvasSize), (255,0,0,0))
-        self.poly = Image.new('RGBA', (canvasSize,canvasSize))
         self.grid = ImageDraw.Draw(self.back)
-        self.pdraw = ImageDraw.Draw(self.poly)
         self.multiplier = multiplier
         self.canvasSize = canvasSize
+        self.drawGrid()
+        self.layers = []
 
     def drawGrid(self):
         for l in range(self.canvasSize//self.multiplier):
@@ -22,22 +24,16 @@ class mapBuilder(object):
             self.grid.line((0,y, self.canvasSize,y ),
                 fill=(255,255,255,127), width=1)
 
+    def resizeAndCenter(self,x,y,z=None):
+        return tuple(filter(None, [x * self.multiplier + self.canvasSize/2, y* self.multiplier + self.canvasSize/2, z]))
 
-    def drawPolygon(self,coordinates):
-        draw = []
-        for point in coordinates:
-            multiplier = self.multiplier
-            shift = self.canvasSize/2
-            #take the small points and shift them to a more visible size.
-            x = point[0] * multiplier + shift
-            y = point[1] * multiplier + shift
-            draw.append((x,y))
-            #draw the actual points onto a polygon.
-        
-        self.pdraw.polygon(draw,fill=(255,255,255,127),outline=(255,255,255,255))
-        self.back.paste(self.poly,mask=self.poly)
-
-
-
+    def drawGeometry(self,geom):
+        newLayerGeom = Image.new('RGBA', (self.canvasSize,self.canvasSize))
+        newLayerDraw = ImageDraw.Draw(newLayerGeom)
+        geom_t = transform(self.resizeAndCenter,geom)
+        print(geom_t.exterior.coords[:])
+        newLayerDraw.polygon(geom_t.exterior.coords[:],fill=(255,255,255,127),outline=(255,255,255,255))
+        self.back.paste(newLayerGeom,mask=newLayerGeom)
+    
     def showMap(self):
         self.back.show()
