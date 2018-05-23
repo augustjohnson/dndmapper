@@ -27,13 +27,21 @@ class mapBuilder(object):
     def resizeAndCenter(self,x,y,z=None):
         return tuple(filter(None, [x * self.multiplier + self.canvasSize/2, y* self.multiplier + self.canvasSize/2, z]))
 
-    def drawGeometry(self,geom):
-        newLayerGeom = Image.new('RGBA', (self.canvasSize,self.canvasSize))
-        newLayerDraw = ImageDraw.Draw(newLayerGeom)
-        geom_t = transform(self.resizeAndCenter,geom)
-        print(geom_t.exterior.coords[:])
-        newLayerDraw.polygon(geom_t.exterior.coords[:],fill=(255,255,255,127),outline=(255,255,255,255))
-        self.back.paste(newLayerGeom,mask=newLayerGeom)
+    def drawPolygon(self,poly):
+        newLayerPoly = Image.new('RGBA', (self.canvasSize,self.canvasSize))
+        newLayerDraw = ImageDraw.Draw(newLayerPoly)
+        poly_t = transform(self.resizeAndCenter,poly)
+        #print(poly_t.exterior.coords[:])
+        newLayerDraw.polygon(poly_t.exterior.coords[:],fill=(255,255,255,127),outline=(255,255,255,255))
+        self.back.paste(newLayerPoly,mask=newLayerPoly)
+
+    def drawLine(self,line):
+        newLayerLine = Image.new('RGBA', (self.canvasSize,self.canvasSize))
+        newLayerDraw = ImageDraw.Draw(newLayerLine)
+        line_t = transform(self.resizeAndCenter,line)
+        #print(line_t.coords[:])
+        newLayerDraw.line(line_t.coords[:],fill=(0,0,255,127),width=3)
+        self.back.paste(newLayerLine,mask=newLayerLine)
     
     def showMap(self):
         self.back.show()
