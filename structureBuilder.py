@@ -15,23 +15,36 @@ class structureBuilder(object):
         wallCorners = []
         def randomWalkb(length):
             x,y = self.startingPoint[0],self.startingPoint[1]
-            walkx,walky = [x],[y]
+            wallCorners.append((x,y))
             for i in range(length):
                 new = random.randint(1,4)
+                dis = random.randint(2,6)
                 if new == 1:
-                    x += 1
+                    x += dis
                 elif new == 2:
-                    y += 1
+                    y += dis
                 elif new ==3 :
-                    x += -1
+                    x += -dis
                 else :
-                    y += -1
-                walkx.append(x)
-                walky.append(y)
-            return [walkx,walky]
+                    y += -dis
 
+                wallCorners.append((x,y))
+                #Bounds check, inner and outer.
+                if not self.O.contains(Point(x,y)) or self.I.contains(Point(x,y)):
+                    #print("removing corner {0},{1} because it was out of bounds.".format(x,y))
+                    wallCorners.pop()
+                    x=wallCorners[-1][0]
+                    y=wallCorners[-1][1]
+                    
+                #Check if the wall overlaps itself.
+                if not LineString(wallCorners).is_simple:
+                    #print("removing corner {0},{1} because it made the string not simple.".format(x,y))
+                    wallCorners.pop()
+                    x=wallCorners[-1][0]
+                    y=wallCorners[-1][1]
+
+            return wallCorners
+        
         rw = randomWalkb(steps)
-        #print(rw)
-        for i in range(steps):
-            wallCorners.append((rw[0][i],rw[1][i]))
+
         return(LineString(wallCorners))
