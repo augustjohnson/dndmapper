@@ -7,7 +7,10 @@ class structureBuilder(object):
 
     def __init__(self,seed,innerBounds,outerBounds):
         random.seed(seed)
-        self.startingPoint=(6.0,0.0)
+        self.icorner = innerBounds.exterior.coords[0][0]
+        self.ocorner = outerBounds.exterior.coords[0][0]
+        x = (self.icorner+self.ocorner)//2 #Find an int between the two boxes.
+        self.startingPoint=(x,0.0)
         self.I = innerBounds
         self.O = outerBounds
 
@@ -44,7 +47,28 @@ class structureBuilder(object):
                     y=wallCorners[-1][1]
 
             return wallCorners
-        
         rw = randomWalkb(steps)
-
         return(LineString(wallCorners))
+    #reflect should take an input of walls, and return a list which includes a reflection.
+    def reflect(self,walls):
+        def getReflectionIndex(ls):
+            print( list(ls.coords))
+            for p in list(ls.coords):
+                #check the last point to see if it's both less than the inner box min and greater than y=0
+                if p[0] < -self.icorner and p[1] <= 0:
+                    return list(ls.coords).index(p)
+
+        
+        def reflectAcrossX(coordlist):
+            reflectedCoordlist = []
+            for c in coordlist[::-1]:
+                #Reflecting the Y coords across X=0.
+                reflectedCoordlist.append((c[0],c[1]*-1))
+            return reflectedCoordlist
+
+        rindex = getReflectionIndex(walls)
+        clist = list(walls.coords)[0:rindex]
+        rlist = reflectAcrossX(clist)
+        return LineString(clist + rlist)
+        
+        

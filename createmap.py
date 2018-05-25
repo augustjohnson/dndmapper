@@ -3,7 +3,7 @@ import structureBuilder
 from shapely.geometry import *
 
 #HOUSE SETUP
-SEED = 4
+SEED = 2
 SYMMETRIC = True
 INNER_SQUARE = 4
 OUTER_SQUARE = 9
@@ -20,10 +20,11 @@ MULTIPLIER = 16 #16x magnification of points.
 
 house = structureBuilder.structureBuilder(SEED,INNER_BOUNDS,OUTER_BOUNDS)
 walls = house.generateRandomWalk(40)
+rwalls = LineString(house.reflect(walls))
 
 
 map = mapBuilder.mapBuilder(MULTIPLIER,CANVAS_SIZE)
 map.drawPolygon(OUTER_BOUNDS)
 map.drawPolygon(INNER_BOUNDS)
-map.drawLine(walls)
+map.drawLine(rwalls)
 map.showMap()
